@@ -70,7 +70,6 @@ wire    stream_prepared;
 //reg     ap_start_sig;
 
 reg [pADDR_WIDTH-1:0] data_WA_reg;
-//reg [pDATA_WIDTH-1:0] data_Di_reg;
 reg [3:0]             data_WE_reg;
 wire[pADDR_WIDTH-1:0] data_WA;
 
@@ -187,9 +186,9 @@ begin
     if ( !axis_rst_n )
     begin
         ss_tready_reg <= 0;
-        //ss_finish_reg <= 0;
         ss_count_reg <= 0;
         ss_read_valid_reg <= 0;
+
         data_WA_reg <= 0;
         stream_prepared_reg <= 0;
     
@@ -210,7 +209,6 @@ begin
 
                         data_WA_reg <= (ss_count == 0) ? 0:data_WA_reg + 4;
                         ss_count_reg <= ss_count_reg + 1;
-                        //data_Di_reg <= 0;
 
                     end
                     else
@@ -226,16 +224,13 @@ begin
                 ap_start:
                 begin
                     if(ss_write_valid)
-                    begin
-                        ss_tready_reg <= 1;
+                    begin                        
                         data_WE_reg <= 4'b1111;
                         data_EN_sw_reg <= 1;
-
                         data_WA_reg <= (ss_count == 4'd10) ? 0 :data_WA_reg + 4;
                         ss_count_reg <=(ss_count == 4'd10) ? 0 :ss_count_reg + 1;
-                        //data_Di_reg <= ss_tdata;
-
                         ss_read_valid_reg <= 1;
+                        ss_tready_reg <= 1;
 
                     end
                     else if (sm_tvalid)
@@ -254,9 +249,6 @@ begin
             data_WE_reg <= 4'b0;
             data_EN_sw_reg <= 1'b0;
             ss_tready_reg <= 1'b0;
-            
-            //if(ss_tlast)
-            //	ss_finish_reg <= 1'b1;
             
             case (state)
             	ap_start:
@@ -289,10 +281,6 @@ begin
         if (sm_tready && !sm_tvalid)
         begin
             case(state)
-                //ap_idle: 
-               // begin
-                 //   sm_tvalid_r <= 0;
-               // end
 
                 ap_start:
                 begin
@@ -302,8 +290,6 @@ begin
                         tap_EN_sr_reg <= 1;
 			            sm_tvalid_reg <= 0;
 			 
-                        //data_RA_reg <= ctrl_data_addr;
-                        //tap_RA_sr_reg <= ctrl_tap_addr;
                         ctrl_tap_ready_reg <= 1;
                     end
                     else if (ss_read_valid && ctrl_tap_ready && !ctrl_tap_valid)
@@ -344,7 +330,6 @@ wire  [pDATA_WIDTH-1:0]       new_coef_data;
 wire  [3:0]                   ctrl_count;
 
 
-
 assign old_ram_data = old_ram_data_reg;
 assign old_coef_data = old_coef_data_reg;
 
@@ -356,12 +341,9 @@ assign o_ram_data = sel ?  old_ram_data : new_ram_data;
 assign o_coef_data = sel ?  old_coef_data : new_coef_data;
 
 //caculate fir
-//reg ffen_d;
-
 
 always@(posedge axis_clk)
 begin
-    //ffen_d <= ffen;
 
     if(!axis_rst_n)
         sm_tdata_reg <= 0;
@@ -477,10 +459,10 @@ begin
 
         if (!wready && wvalid)
         begin
-            //wready_reg <= 1;
+            
             if(awaddr>=12'h40 && awaddr<=12'h7f)
             begin
-                //tap_Di_reg <= wdata;
+                 
                 wready_reg <= 1'b1;
             end
             else if (awaddr==12'h10)
@@ -528,15 +510,6 @@ assign tap_A = ({awready & wvalid}) ? tap_WA :
 always@(*)
 begin
     case(state)
-        ap_idle:
-        begin
-            if(araddr==0 && rvalid)
-                rdata_reg =32'h04;
-            else if(araddr==0 && rvalid && ap_start_sig)
-                rdata_reg =32'h01;
-            else
-                rdata_reg = tap_Do;
-        end
 
         ap_start:
         begin
@@ -555,6 +528,17 @@ begin
             else
                 rdata_reg = tap_Do;
         end
+
+        ap_idle:
+        begin
+            if(araddr==0 && rvalid)
+                rdata_reg =32'h04;
+            else if(araddr==0 && rvalid && ap_start_sig)
+                rdata_reg =32'h01;
+            else
+                rdata_reg = tap_Do;
+        end
+
         default:
             rdata_reg = 0;
     endcase
@@ -564,8 +548,8 @@ always @( posedge axis_clk )
 begin
     if ( !axis_rst_n )
     begin
-        arready_reg <= 0;
-        rvalid_reg <= 0;
+        arready_reg <= 1'b0;
+        rvalid_reg <= 1'b0;
     end
     else
     begin
@@ -575,7 +559,7 @@ begin
             begin
                 arready_reg <= 1'b1;                
             end
-            else if(araddr==0)
+            else if(araddr==12'h0)
             begin
                 arready_reg <= 1'b1;
             end

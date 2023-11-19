@@ -86,6 +86,7 @@ module user_proj_example #(
     // wire [`MPRJ_IO_PADS-1:0] io_out;
     // wire [`MPRJ_IO_PADS-1:0] io_oeb;
 
+    // Address Decode
     wire [1:0] decode;
     assign decode = (wbs_adr_i[31:16]==16'h3800)? 2'd2:    // exmem_fir
                 (wbs_adr_i[31:16]==16'h3000)? 2'd1: 2'd0;   // veilog_fir
@@ -238,7 +239,7 @@ wire [1:0] state;
 wire ap_start_sig, ss_write_valid;
 wire ctrl_tap_ready, ctrl_tap_valid;
 
-fir user_fir(
+fir verilog_fir(
         .awready(awready),          // o
         .wready(wready),            // o
         .awvalid(awvalid),          // i
@@ -272,7 +273,7 @@ fir user_fir(
         .data_EN(data_EN),          // o
         .data_Di(data_Di),          // o        
         .data_Do(data_Do),          // i
-	.data_A(data_A),            // o
+	    .data_A(data_A),            // o
 	
         .axis_clk(axis_clk),
         .axis_rst_n(axis_rst_n),
